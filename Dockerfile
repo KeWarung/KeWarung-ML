@@ -1,5 +1,5 @@
 # Use Python37
-FROM python:3.7
+FROM python:3
 # Copy requirements.txt to the docker image and install packages
 COPY requirements.txt /
 RUN pip install -r requirements.txt
