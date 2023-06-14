@@ -7,7 +7,7 @@
 from flask import Flask
 from flask import request
 import pandas as pd
-from prediction_script_test import prediction
+from prediction_script import prediction
 
 app = Flask(__name__)
 
