@@ -8,6 +8,7 @@ from tensorflow.keras.models import load_model
 
 
 def prediction (input_data):
+    
     model = load_model('model_script_w30.h5')
 
     # Filter for using column
@@ -59,46 +60,52 @@ def prediction (input_data):
     window_size = 30  # Assuming the same window size as during training
 
     input_data = {}
-    for i in range (len(unique_item)):
-        input_data[i] = np.array(series[i][:window_size])  # Take the last 'window_size' elements as 
-        input_data[i] = input_data[i].reshape(1, window_size, 1)
-    
-    # Predict the next 30 values
     forecast_dict = {}
-    for i in range (len(unique_item)):
-        forecast = []
-        for _ in range(30):
-            prediction = model.predict(input_data[i])
-            forecast.append(int(prediction[0, 0]))
-            prediction = np.array([[[prediction[0, 0]]]])
-            input_data[i] = np.concatenate((input_data[i][:, 1:], prediction), axis=1)
-        forecast_dict[i] = forecast
-    
     sum_list = []
-    for x in range (len(unique_item)):
-        sum = 0
-        forecast_result = np.array(forecast_dict[x])
-        for i in range (7):
-            sum += forecast_result[i]
-        sum_list.append(sum)
-
     prev_week_list = []
-    for x in range (len(unique_item)):
-        prev_week = 0
-        hari_mulai = window_size - 7
-        data_series = np.array(series[x])
-        for i in range (hari_mulai, window_size):
-            prev_week += data_series[i]
-        prev_week_list.append(prev_week)
+    count_yes=0
+    count_no=0
+    for i in range (len(unique_item)):
+        if len(series[i])>=30:
+            count_yes=+1
+            input_data[i] = np.array(series[i][:window_size])  # Take the last 'window_size' elements as 
+            input_data[i] = input_data[i].reshape(1, window_size, 1)
     
-    df = pd.DataFrame(columns=['jenis barang', 'penjualan minggu ini', 'jumlah stok saat ini', 'prediksi penjualan minggu depan', 'estimasi jumlah yang harus di restok'])
+        # Predict the next 30 values
+            forecast = []
+            for _ in range(30):
+                prediction = model.predict(input_data[i])
+                forecast.append(int(prediction[0, 0]))
+                prediction = np.array([[[prediction[0, 0]]]])
+                input_data[i] = np.concatenate((input_data[i][:, 1:], prediction), axis=1)
+            forecast_dict[i] = forecast
+    
+            sum = 0
+            forecast_result = np.array(forecast_dict[i])
+            for j in range (7):
+                sum += forecast_result[j]
+            sum_list.append(sum)
 
-    for i  in range (len(unique_item)):
-        if sum_list[i] >= stock[i][window_size]:
-            total_restock = sum_list[i]-stock[i][window_size]
-            new_row = pd.DataFrame([[unique_item[i], prev_week_list[i], stock[i][window_size], sum_list[i], total_restock]], columns=df.columns)
-            df = pd.concat([df, new_row], ignore_index=True)
-            df = df.sort_values('estimasi jumlah yang harus di restok', ascending=True)
+            prev_week = 0
+            hari_mulai = window_size - 7
+            data_series = np.array(series[i])
+            for j in range (hari_mulai, window_size+1):
+                prev_week += data_series[j]
+            prev_week_list.append(prev_week)
+    
+            df = pd.DataFrame(columns=['jenis barang', 'penjualan minggu ini', 'jumlah stok saat ini', 'prediksi penjualan minggu depan', 'estimasi jumlah yang harus di restok'])
 
-    return df     
+            if sum_list[i] >= stock[i][window_size]:
+                total_restock = sum_list[i]-stock[i][window_size]
+                new_row = pd.DataFrame([[unique_item[i], prev_week_list[i], stock[i][window_size], sum_list[i], total_restock]], columns=df.columns)
+                df = pd.concat([df, new_row], ignore_index=True)
+                df = df.sort_values('estimasi jumlah yang harus di restok', ascending=True)
+        else:
+            count_no=+1
+            continue
+        
+    if count_yes==0 and count_no>=1:
+        df = "Data tidak mencukupi untuk dilakukan prediksi"
+        
+    return df       
 
