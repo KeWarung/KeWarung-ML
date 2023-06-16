@@ -1,2 +1,4 @@
 # KeWarung-ML
-Machine learning model for KeWarung: Kelola Warung
+
+## Installing python 
+## Installing dependencies
